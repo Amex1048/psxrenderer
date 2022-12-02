@@ -1,47 +1,13 @@
-use renderer::gltf;
-
-use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
+use sdl2::event::{Event, WindowEvent};
+use sdl2::keyboard::{Mod, Scancode};
 use sdl2::video::GLProfile;
 
 const GL_MAJOR_VERSION: u8 = 4;
 const GL_MINOR_VERSION: u8 = 5;
 
-fn print_debug_messages() {
-    unsafe {
-        loop {
-            let mut buf: Vec<u8> = Vec::with_capacity(1024);
-            let mut sources = 0;
-            let mut types = 0;
-            let mut ids = 0;
-            let mut severities = 0;
-            let mut lengths = 0;
-            let fetched = gl::GetDebugMessageLog(
-                1,
-                1024,
-                &mut sources,
-                &mut types,
-                &mut ids,
-                &mut severities,
-                &mut lengths,
-                buf.as_mut_ptr().cast(),
-            );
-
-            if fetched == 0 {
-                break;
-            }
-
-            buf.set_len(lengths.try_into().unwrap());
-            let string = String::from_utf8_lossy(&buf);
-
-            println!("{string}");
-        }
-    }
-}
+const FRAMERATE: u32 = 60;
 
 fn main() {
-    // gltf::read("models/Duck/Duck.gltf");
-    //
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
@@ -50,12 +16,17 @@ fn main() {
     gl_attr.set_context_profile(GLProfile::Core);
     gl_attr.set_context_version(GL_MAJOR_VERSION, GL_MINOR_VERSION);
 
-    let window = video_subsystem
+    let mut window = video_subsystem
         .window("Window", 800, 600)
         .opengl()
-        // .resizable()
+        .resizable()
         .build()
         .unwrap();
+
+    window.set_grab(true);
+    sdl_context.mouse().set_relative_mouse_mode(true);
+    // sdl_context.mouse().warp_mouse_in_window(&window, 400, 300);
+    // sdl_context.mouse().show_cursor(false);
 
     // Unlike the other example above, nobody created a context for your window, so you need to create one.
     let ctx = window.gl_create_context().unwrap();
@@ -67,23 +38,146 @@ fn main() {
         (GL_MAJOR_VERSION, GL_MINOR_VERSION)
     );
 
+    // ::std::thread::sleep(::std::time::Duration::new(0, 1_000_000_000u32 / FRAMERATE));
+    // sdl_context.mouse().warp_mouse_in_window(&window, 400, 300);
+
     let mut render = renderer::render::RenderContext::default();
-
+    let mut input_state = renderer::InputState::default();
     let mut event_pump = sdl_context.event_pump().unwrap();
+    let mut timer = std::time::Instant::now();
     'running: loop {
-        render.render();
+        input_state.mouse_rel = (0, 0);
+        // input_state.shift = false;
 
-        window.gl_swap_window();
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. }
                 | Event::KeyDown {
-                    keycode: Some(Keycode::Escape),
+                    scancode: Some(Scancode::Escape),
                     ..
                 } => break 'running,
+                Event::KeyDown {
+                    scancode: Some(Scancode::W),
+                    keymod,
+                    ..
+                } => {
+                    input_state.w = true;
+                    input_state.shift = keymod == Mod::LSHIFTMOD;
+                }
+                Event::KeyDown {
+                    scancode: Some(Scancode::A),
+                    keymod,
+                    ..
+                } => {
+                    input_state.a = true;
+                    input_state.shift = keymod == Mod::LSHIFTMOD;
+                }
+                Event::KeyDown {
+                    scancode: Some(Scancode::S),
+                    keymod,
+                    ..
+                } => {
+                    input_state.s = true;
+                    input_state.shift = keymod == Mod::LSHIFTMOD;
+                }
+                Event::KeyDown {
+                    scancode: Some(Scancode::D),
+                    keymod,
+                    ..
+                } => {
+                    input_state.d = true;
+                    input_state.shift = keymod == Mod::LSHIFTMOD;
+                }
+                Event::KeyDown {
+                    scancode: Some(Scancode::E),
+                    keymod,
+                    ..
+                } => {
+                    input_state.e = true;
+                    input_state.shift = keymod == Mod::LSHIFTMOD;
+                }
+                Event::KeyDown {
+                    scancode: Some(Scancode::Q),
+                    keymod,
+                    ..
+                } => {
+                    input_state.q = true;
+                    input_state.shift = keymod == Mod::LSHIFTMOD;
+                }
+                // Event::KeyDown {
+                //     keymod: Mod::LSHIFTMOD,
+                //     ..
+                // } => input_state.shift = true,
+                // ---------------------------//
+                Event::KeyUp {
+                    scancode: Some(Scancode::W),
+                    ..
+                } => input_state.w = false,
+                Event::KeyUp {
+                    scancode: Some(Scancode::A),
+                    ..
+                } => input_state.a = false,
+                Event::KeyUp {
+                    scancode: Some(Scancode::S),
+                    ..
+                } => input_state.s = false,
+                Event::KeyUp {
+                    scancode: Some(Scancode::D),
+                    ..
+                } => input_state.d = false,
+                Event::KeyUp {
+                    scancode: Some(Scancode::E),
+                    ..
+                } => input_state.e = false,
+                Event::KeyUp {
+                    scancode: Some(Scancode::Q),
+                    ..
+                } => input_state.q = false,
+                // Event::KeyUp {
+                //     keymod: Mod::LSHIFTMOD,
+                //     ..
+                // } => input_state.shift = false,
+                // ---------------------------//
+                Event::MouseMotion {
+                    // which,
+                    // mousestate,
+                    x,
+                    y,
+                    xrel,
+                    yrel,
+                    ..
+                } => {
+                    input_state.mouse_pos = (x, y);
+                    input_state.mouse_rel = (xrel, yrel);
+                }
+                // ---------------------------//
+                Event::Window { win_event, .. } => match win_event {
+                    WindowEvent::Resized(width, height) => {
+                        // println!("Resized: {width}, {height}");
+                        render.update_viewport(0, 0, width, height)
+                    }
+                    WindowEvent::SizeChanged(width, height) => {
+                        // println!("Size changed: {width}, {height}");
+                        render.update_viewport(0, 0, width, height)
+                    }
+                    _ => {}
+                },
                 _ => {}
             }
         }
-        ::std::thread::sleep(::std::time::Duration::new(0, 1_000_000_000u32 / 60));
+
+        println!("{input_state:?}");
+
+        let delta = timer.elapsed().as_secs_f32();
+        timer = std::time::Instant::now();
+
+        // println!("{delta:?}");
+
+        render.update(&input_state, delta);
+
+        render.render();
+        window.gl_swap_window();
+
+        ::std::thread::sleep(::std::time::Duration::new(0, 1_000_000_000u32 / FRAMERATE));
     }
 }

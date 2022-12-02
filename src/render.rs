@@ -1,102 +1,30 @@
-// // use cgmath::Zero;
-//
-// // use crate::glenum::DrawType;
-// use crate::shader::{Shader, ShaderProgram};
-// // use crate::vertex::{Vao, Vbo, Vertex};
-//
-// // static VERTICES: [f32; 9] = [-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0];
-// static VERTICES: [Vertex; 3] = [
-//     Vertex {
-//         pos: cgmath::Vector3 {
-//             x: -0.5,
-//             y: -0.5,
-//             z: 0.0,
-//         },
-//         // normal: cgmath::Vector3::default(),
-//         // texture: cgmath::Vector2::zero(),
-//     },
-//     Vertex {
-//         pos: cgmath::Vector3 {
-//             x: 0.5,
-//             y: -0.5,
-//             z: 0.0,
-//         },
-//         // normal: cgmath::Vector3::zero(),
-//         // texture: cgmath::Vector2::zero(),
-//     },
-//     Vertex {
-//         pos: cgmath::Vector3 {
-//             x: 0.0,
-//             y: 0.5,
-//             z: 0.0,
-//         },
-//         // normal: cgmath::Vector3::zero(),
-//         // texture: cgmath::Vector2::zero(),
-//     },
-// ];
-//
-// pub struct RenderContext {
-//     vao: Vao,
-//     _vbos: Vec<Vbo>,
-//     shader_program: ShaderProgram,
-// }
-//
-// impl RenderContext {
-//     // pub fn new(vao: Vao, shader_program: ShaderProgram) -> RenderContext {
-//     //     Self {
-//     //         vao,
-//     //         shader_program,
-//     //     }
-//     // }
-//
-//     pub fn sample_scene() -> Self {
-//         let vert_shader = Shader::from_file("shaders/vert.glsl", gl::VERTEX_SHADER).unwrap();
-//         let frag_shader = Shader::from_file("shaders/frag.glsl", gl::FRAGMENT_SHADER).unwrap();
-//         let triangle_program = ShaderProgram::from_shaders([vert_shader, frag_shader]).unwrap();
-//
-//         let mut vao = Vao::new();
-//         let vbos = vao.as_context(|vao_context| {
-//             let mut vbo = Vbo::new();
-//             vbo.fill_with(vao_context, &VERTICES, DrawType::Static);
-//
-//             vec![vbo]
-//         });
-//
-//         Self {
-//             vao,
-//             _vbos: vbos,
-//             shader_program: triangle_program,
-//         }
-//     }
-//
-//     pub fn render(&mut self) {
-//         self.vao.as_context(|vao_context| {
-//             self.shader_program.as_context(|program_context| unsafe {
-//                 gl::ClearColor(0.6, 0.0, 0.8, 1.0);
-//                 gl::Clear(gl::COLOR_BUFFER_BIT);
-//
-//                 gl::DrawArrays(gl::TRIANGLES, 0, 6);
-//             });
-//         });
-//     }
-// }
-
-use crate::buffer::*;
-use crate::model::Model;
+use crate::camera::Camera;
+use crate::model::{Instance, Model};
 
 pub struct RenderContext {
-    models: Vec<Model>,
+    instances: Vec<Instance>,
+    camera: Camera,
 }
 
 impl Default for RenderContext {
     fn default() -> Self {
-        let models = vec![Model::default()];
+        let instances = vec![Instance {
+            model: Model::default(),
+            transform: cgmath::Matrix4::from_translation(cgmath::vec3(0.0, 0.0, 0.0)),
+        }];
+
+        let camera = Camera::new(
+            cgmath::vec3(0.0, 0.0, 5.0),
+            cgmath::vec3(0.0, 0.0, 0.0),
+            cgmath::Deg(45.0),
+            4.0 / 3.0,
+        );
 
         unsafe {
             gl::Enable(gl::DEPTH_TEST);
         }
 
-        Self { models }
+        Self { instances, camera }
     }
 }
 
@@ -104,22 +32,57 @@ impl Default for RenderContext {
 
 impl RenderContext {
     pub fn render(&mut self) {
-        // println!("render loop");
-
         unsafe {
             gl::ClearColor(0.6, 0.0, 0.8, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
 
-        for model in self.models.iter_mut() {
-            model.render();
-        }
+        // let view = cgmath::Matrix4::from_translation(cgmath::vec3(0.0, 0.0, -5.0));
+        let view = self.camera.view();
+        let projection = self.camera.projection();
 
-        // println!("-------");
+        for instance in self.instances.iter_mut() {
+            let transform = instance.transform;
+            let mvp = projection * view * transform;
+
+            instance.model.program.load_uniform_mat("mvp", false, mvp);
+            instance.model.render();
+        }
 
         // unsafe {
         //     let error = gl::GetError();
         //     println!("{error}");
         // }
+    }
+
+    pub fn update_viewport(&mut self, x: i32, y: i32, width: i32, height: i32) {
+        unsafe {
+            gl::Viewport(x, y, width, height);
+        }
+        self.camera.set_aspect(width as f32 / height as f32);
+    }
+
+    pub fn update(&mut self, input: &crate::InputState, delta: f32) {
+        const SHIFT_MULTIPLIER: f32 = 3.5;
+
+        let shift = if input.shift { SHIFT_MULTIPLIER } else { 1.0 };
+        let front = if input.w { 1.0 } else { 0.0 } * delta * shift;
+        let right = if input.d { 1.0 } else { 0.0 } * delta * shift;
+        let back = if input.s { 1.0 } else { 0.0 } * delta * shift;
+        let left = if input.a { 1.0 } else { 0.0 } * delta * shift;
+        let up = if input.e { 1.0 } else { 0.0 } * delta;
+        let down = if input.q { 1.0 } else { 0.0 } * delta;
+
+        let mouse = (
+            input.mouse_rel.0 as f32 / 800.0 * delta,
+            input.mouse_rel.1 as f32 / 600.0 * delta,
+        );
+
+        println!("{:?}", input.mouse_pos);
+        println!("{:?}", input.mouse_rel);
+        println!("{:?}", mouse);
+
+        self.camera
+            .update(front, right, back, left, up, down, mouse);
     }
 }

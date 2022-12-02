@@ -9,8 +9,8 @@ pub struct Model {
 }
 
 pub struct Instance {
-    pub(crate) model: Model,
-    pub(crate) transform: cgmath::Matrix4<f32>,
+    pub model: Model,
+    pub transform: cgmath::Matrix4<f32>,
 }
 
 impl Default for Model {

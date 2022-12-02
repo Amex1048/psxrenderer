@@ -8,9 +8,22 @@ pub struct RenderContext {
 
 impl Default for RenderContext {
     fn default() -> Self {
+        let meshes = crate::gltf::read("models/Duck/Duck.gltf");
+        assert!(meshes.len() == 1);
+
+        let vert_shader =
+            crate::shader::Shader::from_file("shaders/vert.glsl", gl::VERTEX_SHADER).unwrap();
+        let frag_shader =
+            crate::shader::Shader::from_file("shaders/frag.glsl", gl::FRAGMENT_SHADER).unwrap();
+        let shader = crate::shader::Program::from_shaders([vert_shader, frag_shader]).unwrap();
+
         let instances = vec![Instance {
-            model: Model::default(),
-            transform: cgmath::Matrix4::from_translation(cgmath::vec3(0.0, 0.0, 0.0)),
+            model: Model {
+                meshes,
+                materials: vec![crate::material::Material::default()],
+                program: shader,
+            },
+            transform: cgmath::Matrix4::from_scale(0.01),
         }];
 
         let camera = Camera::new(
@@ -31,6 +44,21 @@ impl Default for RenderContext {
 // static VERTICES: [f32; 9] = [-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0];
 
 impl RenderContext {
+    pub fn new(instances: Vec<Instance>) -> Self {
+        let camera = Camera::new(
+            cgmath::vec3(0.0, 0.0, 5.0),
+            cgmath::vec3(0.0, 0.0, 0.0),
+            cgmath::Deg(45.0),
+            4.0 / 3.0,
+        );
+
+        unsafe {
+            gl::Enable(gl::DEPTH_TEST);
+        }
+
+        Self { instances, camera }
+    }
+
     pub fn render(&mut self) {
         unsafe {
             gl::ClearColor(0.6, 0.0, 0.8, 1.0);
@@ -78,9 +106,9 @@ impl RenderContext {
             input.mouse_rel.1 as f32 / 600.0 * delta,
         );
 
-        println!("{:?}", input.mouse_pos);
-        println!("{:?}", input.mouse_rel);
-        println!("{:?}", mouse);
+        // println!("{:?}", input.mouse_pos);
+        // println!("{:?}", input.mouse_rel);
+        // println!("{:?}", mouse);
 
         self.camera
             .update(front, right, back, left, up, down, mouse);

@@ -41,8 +41,8 @@ impl Camera {
         // println!("front: {front:?}");
         // println!("right: {right:?}");
         // println!("up: {up:?}");
-        println!("yaw: {yaw:?}");
-        println!("pitch: {pitch:?}");
+        // println!("yaw: {yaw:?}");
+        // println!("pitch: {pitch:?}");
 
         Self {
             position,
@@ -90,7 +90,6 @@ impl Camera {
         self.yaw += cgmath::Rad(mouse.0 * MOUSE_SENSIVITY);
         self.pitch += cgmath::Rad(mouse.1 * MOUSE_SENSIVITY);
 
-        // self.yaw = cgmath::Rad(self.yaw.0 % 2.0 * std::f32::consts::PI);
         if self.yaw.0 > 2.0 * std::f32::consts::PI {
             self.yaw.0 -= 2.0 * std::f32::consts::PI;
         }
@@ -102,17 +101,14 @@ impl Camera {
         self.pitch = cgmath::Rad(self.pitch.0.min(PITCH_BOUND));
 
         self.front = -cgmath::vec3(
-            // (self.yaw * self.pitch.cos()).cos(),
             self.yaw.cos() * self.pitch.cos(),
             self.pitch.sin(),
-            // self.front.y,
-            // (self.yaw * self.pitch.cos()).sin(),
             self.yaw.sin() * self.pitch.cos(),
         )
         .normalize();
-
-        println!("front: {:?}", self.front);
-        println!("yaw: {:?}", self.yaw);
-        println!("pitch: {:?}", self.pitch);
+        //
+        // println!("front: {:?}", self.front);
+        // println!("yaw: {:?}", self.yaw);
+        // println!("pitch: {:?}", self.pitch);
     }
 }

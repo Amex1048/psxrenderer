@@ -3,7 +3,7 @@ pub mod camera;
 pub mod gltf;
 mod material;
 mod mesh;
-mod model;
+pub mod model;
 pub mod render;
 mod shader;
 mod vao;

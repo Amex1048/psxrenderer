@@ -32,6 +32,9 @@ fn main() {
     let ctx = window.gl_create_context().unwrap();
     gl::load_with(|name| video_subsystem.gl_get_proc_address(name) as *const _);
 
+    // let meshes = renderer::gltf::read("models/Cube/Cube.gltf");
+    // assert!(meshes.len() == 1);
+
     debug_assert_eq!(gl_attr.context_profile(), GLProfile::Core);
     debug_assert_eq!(
         gl_attr.context_version(),
@@ -45,6 +48,7 @@ fn main() {
     let mut input_state = renderer::InputState::default();
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut timer = std::time::Instant::now();
+
     'running: loop {
         input_state.mouse_rel = (0, 0);
         // input_state.shift = false;
@@ -166,18 +170,27 @@ fn main() {
             }
         }
 
-        println!("{input_state:?}");
+        // println!("{input_state:?}");
 
         let delta = timer.elapsed().as_secs_f32();
         timer = std::time::Instant::now();
 
         // println!("{delta:?}");
 
+        let to_render = std::time::Instant::now();
+
         render.update(&input_state, delta);
 
         render.render();
         window.gl_swap_window();
 
-        ::std::thread::sleep(::std::time::Duration::new(0, 1_000_000_000u32 / FRAMERATE));
+        let render_delta = to_render.elapsed().as_nanos();
+
+        // println!("Framerate: {}", 1_000_000_000 / render_delta);
+
+        ::std::thread::sleep(::std::time::Duration::new(
+            0,
+            1_000_000_000u32 / FRAMERATE, /*- render_delta as u32*/
+        ));
     }
 }

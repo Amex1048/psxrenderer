@@ -1,6 +1,7 @@
 use cgmath::prelude::*;
 use cgmath::Vector3;
 
+#[derive(Debug)]
 pub struct Camera {
     position: Vector3<f32>,
     front: Vector3<f32>,

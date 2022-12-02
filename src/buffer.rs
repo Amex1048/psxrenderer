@@ -68,6 +68,7 @@ pub(crate) trait Buffer: crate::GlObject {
     }
 }
 
+#[derive(Debug)]
 #[repr(transparent)]
 pub(crate) struct Vbo(u32);
 
@@ -116,6 +117,7 @@ impl Buffer for Vbo {
     const BUFFER_TYPE: BufferType = BufferType::Array;
 }
 
+#[derive(Debug)]
 #[repr(transparent)]
 pub(crate) struct Ebo(u32);
 

@@ -1,11 +1,8 @@
+#[derive(Debug)]
 #[repr(transparent)]
 pub(crate) struct Vao(u32);
 
 impl Vao {
-    pub fn zero() -> Self {
-        Self(0)
-    }
-
     pub fn new() -> Self {
         unsafe {
             let mut vao = 0;

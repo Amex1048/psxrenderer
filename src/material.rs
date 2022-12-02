@@ -2,16 +2,26 @@
 
 // use cgmath::prelude::*;
 
+// use std::num::NonZeroUsize;
+
+use crate::shader::Program;
+
+#[derive(Debug)]
 pub struct Material {
-    // pub(crate) shader: Program,
+    pub(crate) shader: Option<usize>,
+}
+
+impl Material {
+    pub fn choose_shader(&self, programs: &[Program]) -> usize {
+        0
+    }
 }
 
 impl Default for Material {
     fn default() -> Self {
-        Self {}
         // let vert_shader = Shader::from_file("shaders/vert.glsl", gl::VERTEX_SHADER).unwrap();
         // let frag_shader = Shader::from_file("shaders/frag.glsl", gl::FRAGMENT_SHADER).unwrap();
-        // let mut shader = Program::from_shaders([vert_shader, frag_shader]).unwrap();
+        // let shader = Program::from_shaders([vert_shader, frag_shader]).unwrap();
         // let time = std::time::SystemTime::now();
 
         // let model = cgmath::Matrix4::from_translation(cgmath::vec3(0.0, 1.0, 0.0));
@@ -25,5 +35,6 @@ impl Default for Material {
         // shader.load_uniform_mat("projection", false, projection);
 
         // Self { shader }
+        Self { shader: None }
     }
 }

@@ -1,5 +1,6 @@
 use std::path::Path;
 
+#[derive(Debug)]
 pub struct Shader(pub(super) u32);
 
 impl Shader {

@@ -3,6 +3,7 @@ use super::uniform::*;
 
 use std::ffi::CString;
 
+#[derive(Debug)]
 pub struct Program(u32);
 
 impl Program {

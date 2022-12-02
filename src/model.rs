@@ -41,7 +41,10 @@ impl Model {
     pub(crate) fn render(&mut self) {
         self.program.as_context(|| {
             for (mesh, material) in self.meshes.iter_mut().zip(self.materials.iter_mut()) {
-                mesh.render();
+                for primitive in mesh.0.iter_mut() {
+                    primitive.render();
+                }
+                // mesh.render();
             }
         });
     }

@@ -1,5 +1,4 @@
 use crate::buffer::*;
-use crate::material::Material;
 use crate::vao::Vao;
 
 use crate::shader::vertex::{NORMAL_LOCATION, POSITION_LOCATION, TEXTURE_LOCATION};
@@ -10,8 +9,18 @@ const POS_VBO: usize = 0;
 const NOR_VBO: usize = 1;
 const TEX_VBO: usize = 2;
 
+#[derive(Debug)]
+pub struct Mesh(pub Vec<Primitive>);
+
+impl Default for Mesh {
+    fn default() -> Self {
+        Self(vec![Primitive::default()])
+    }
+}
+
+#[derive(Debug)]
 #[repr(C)]
-pub struct Mesh {
+pub struct Primitive {
     vertices: Vec<Vector3<f32>>,
     normals: Vec<Vector3<f32>>,
     tex_coords: Vec<Vector2<f32>>,
@@ -22,7 +31,7 @@ pub struct Mesh {
     vao: Vao,
 }
 
-impl Mesh {
+impl Primitive {
     pub(crate) fn new(
         vertices: Vec<Vector3<f32>>,
         normals: Vec<Vector3<f32>>,
@@ -73,7 +82,7 @@ impl Mesh {
     }
 }
 
-impl Default for Mesh {
+impl Default for Primitive {
     fn default() -> Self {
         let vertices = vec![
             Vector3 {
@@ -175,6 +184,6 @@ impl Default for Mesh {
             5, 6, 4, 7, 6, 4, 5,
         ];
 
-        Mesh::new(vertices, colors, tex_coords, indices)
+        Self::new(vertices, colors, tex_coords, indices)
     }
 }

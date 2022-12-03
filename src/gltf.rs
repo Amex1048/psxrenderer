@@ -86,6 +86,9 @@ pub fn read_from_file<P: AsRef<Path>>(path: P) -> (AssetStorage, Vec<Node>) {
             storage.textures2d.push(texture);
         }
 
+        let color = pbr.base_color_factor();
+        material.base_color = Some(cgmath::vec3(color[0], color[1], color[2]));
+
         // TODO
 
         storage.materials.push(material);

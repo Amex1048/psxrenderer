@@ -45,7 +45,7 @@ fn main() {
     // sdl_context.mouse().warp_mouse_in_window(&window, 400, 300);
 
     // let mut render = renderer::render::RenderContext::default();
-    let mut render = renderer::render::World::from_gltf_file("models/Scene/Scene.gltf");
+    let mut render = renderer::render::World::from_gltf_file("models/Scene2/Scene2.gltf");
     let mut input_state = renderer::InputState::default();
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut timer = std::time::Instant::now();

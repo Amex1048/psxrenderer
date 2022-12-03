@@ -30,17 +30,36 @@ pub struct World {
 impl World {
     pub fn from_gltf_file<P: AsRef<std::path::Path>>(path: P) -> Self {
         let vert_shader =
-            crate::shader::Shader::from_file("shaders/vert.glsl", gl::VERTEX_SHADER).unwrap();
+            crate::shader::Shader::from_file("shaders/color/vert.glsl", gl::VERTEX_SHADER).unwrap();
         let frag_shader =
-            crate::shader::Shader::from_file("shaders/frag.glsl", gl::FRAGMENT_SHADER).unwrap();
-        let shader = crate::shader::Program::from_shaders([vert_shader, frag_shader]).unwrap();
+            crate::shader::Shader::from_file("shaders/color/frag.glsl", gl::FRAGMENT_SHADER)
+                .unwrap();
+        let shader_color =
+            crate::shader::Program::from_shaders([vert_shader, frag_shader]).unwrap();
+
+        let vert_shader =
+            crate::shader::Shader::from_file("shaders/texture/vert.glsl", gl::VERTEX_SHADER)
+                .unwrap();
+        let frag_shader =
+            crate::shader::Shader::from_file("shaders/texture/frag.glsl", gl::FRAGMENT_SHADER)
+                .unwrap();
+        let shader_texture =
+            crate::shader::Program::from_shaders([vert_shader, frag_shader]).unwrap();
 
         let (mut storage, nodes) = crate::gltf::read_from_file(path);
-        storage.programs = vec![shader];
+        storage.programs = vec![shader_color, shader_texture];
+
+        for material in storage.materials.iter_mut() {
+            let shader = material.choose_shader(&storage.programs);
+            // println!("{shader}");
+            material.shader = Some(shader);
+        }
 
         unsafe {
             gl::Enable(gl::DEPTH_TEST);
         }
+
+        // println!("{:?}", storage);
 
         World {
             // meshes: data.0,
@@ -84,6 +103,8 @@ impl World {
                         "albedo",
                         cgmath::vec1(crate::shader::fragment::ALBEDO_TEX as i32),
                     );
+                } else {
+                    program.load_uniform_vec("color", material.base_color.unwrap());
                 }
 
                 program.as_context(|| {

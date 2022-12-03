@@ -1,6 +1,9 @@
 use super::shader::Shader;
 use super::uniform::*;
 
+use crate::texture::Texture2D;
+use crate::GlObject;
+
 use std::ffi::CString;
 
 #[derive(Debug)]
@@ -79,7 +82,7 @@ impl Program {
     }
 
     pub fn load_uniform_mat<T, const N: usize, M: UniformMat<T, N>>(
-        &mut self,
+        &self,
         name: &str,
         transpose: bool,
         mat: M,
@@ -98,6 +101,13 @@ impl Program {
                 if transpose { gl::TRUE } else { gl::FALSE },
                 data.as_ptr(),
             );
+        });
+    }
+
+    pub fn load_uniform_texture2d(&mut self, texture: &Texture2D, tex_unit: u32) {
+        self.as_context(|| unsafe {
+            gl::ActiveTexture(gl::TEXTURE0 + tex_unit);
+            gl::BindTexture(gl::TEXTURE_2D, texture.glid());
         });
     }
 }

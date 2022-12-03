@@ -3,10 +3,9 @@ pub mod camera;
 pub mod gltf;
 mod material;
 mod mesh;
-pub mod model;
-// pub mod node;
 pub mod render;
 mod shader;
+pub mod texture;
 mod vao;
 
 pub(crate) trait GlObject {

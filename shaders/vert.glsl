@@ -1,16 +1,15 @@
 #version 450 core
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 aColor;
+layout (location = 0) in vec3 vPos;
+layout (location = 1) in vec3 vColor;
+layout (location = 2) in vec2 vAlbedoTexCoord;
 
 out vec3 ourColor;
+out vec2 albedoTexCoord;
 
-// uniform mat4 model;
-// uniform mat4 view;
-// uniform mat4 projection;
 uniform mat4 mvp;
 
 void main() {
-   // gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
-   gl_Position = mvp * vec4(aPos, 1.0);
-   ourColor = aColor;
+   gl_Position = mvp * vec4(vPos, 1.0);
+   ourColor = vColor;
+   albedoTexCoord = vAlbedoTexCoord;
 }

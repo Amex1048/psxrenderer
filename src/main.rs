@@ -29,7 +29,7 @@ fn main() {
     // sdl_context.mouse().show_cursor(false);
 
     // Unlike the other example above, nobody created a context for your window, so you need to create one.
-    let ctx = window.gl_create_context().unwrap();
+    let _ctx = window.gl_create_context().unwrap();
     gl::load_with(|name| video_subsystem.gl_get_proc_address(name) as *const _);
 
     // let meshes = renderer::gltf::read("models/Cube/Cube.gltf");
@@ -45,7 +45,7 @@ fn main() {
     // sdl_context.mouse().warp_mouse_in_window(&window, 400, 300);
 
     // let mut render = renderer::render::RenderContext::default();
-    let mut render = renderer::render::World::from_gltf_file("models/TestBlender/TestBlender.gltf");
+    let mut render = renderer::render::World::from_gltf_file("models/Scene/Scene.gltf");
     let mut input_state = renderer::InputState::default();
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut timer = std::time::Instant::now();
@@ -185,7 +185,7 @@ fn main() {
         render.render();
         window.gl_swap_window();
 
-        let render_delta = to_render.elapsed().as_nanos();
+        let _render_delta = to_render.elapsed().as_nanos();
 
         // println!("Framerate: {}", 1_000_000_000 / render_delta);
 

@@ -25,6 +25,26 @@ impl UniformVec<f32, 4> for cgmath::Vector4<f32> {
     const LOADER: unsafe fn(i32, i32, *const f32) = gl::Uniform4fv;
 }
 
+impl UniformVec<i32, 1> for cgmath::Vector1<i32> {
+    // const COUNT: i32 = 1;
+    const LOADER: unsafe fn(i32, i32, *const i32) = gl::Uniform1iv;
+}
+
+impl UniformVec<i32, 2> for cgmath::Vector2<i32> {
+    // const COUNT: i32 = 2;
+    const LOADER: unsafe fn(i32, i32, *const i32) = gl::Uniform2iv;
+}
+
+impl UniformVec<i32, 3> for cgmath::Vector3<i32> {
+    // const COUNT: i32 = 3;
+    const LOADER: unsafe fn(i32, i32, *const i32) = gl::Uniform3iv;
+}
+
+impl UniformVec<i32, 4> for cgmath::Vector4<i32> {
+    // const COUNT: i32 = 4;
+    const LOADER: unsafe fn(i32, i32, *const i32) = gl::Uniform4iv;
+}
+
 // Matrices
 
 pub trait UniformMat<T, const N: usize>: AsRef<[T; N]> {

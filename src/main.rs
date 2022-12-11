@@ -178,15 +178,14 @@ fn main() {
 
         // println!("{delta:?}");
 
-        let to_render = std::time::Instant::now();
+        // let to_render = std::time::Instant::now();
 
         render.update(&input_state, delta);
 
         render.render();
         window.gl_swap_window();
 
-        let _render_delta = to_render.elapsed().as_nanos();
-
+        // let render_delta = to_render.elapsed().as_nanos();
         // println!("Framerate: {}", 1_000_000_000 / render_delta);
 
         ::std::thread::sleep(::std::time::Duration::new(

@@ -1,5 +1,5 @@
 # PSX styled renderer
-Small university project for computer graphics course that was later tinkered for PSX styled graphics rendering.
+Small university project for computer graphics course that was later tinkered for PSX styled graphics rendering. For now scene path is hardcoded in `src/main.rs` file.
 ### Features
 - [x] Basic GLTF Scene loading
 - [x] Mesh rendering

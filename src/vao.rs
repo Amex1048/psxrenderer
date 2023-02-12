@@ -19,15 +19,12 @@ impl Vao {
         F: FnMut() -> R,
     {
         unsafe {
-            // println!("bind vao");
             gl::BindVertexArray(self.0);
         }
 
         let result = closure();
 
-        // #[cfg(debug_assertions)]
         unsafe {
-            // println!("unbind vao");
             gl::BindVertexArray(0);
         }
 

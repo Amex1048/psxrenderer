@@ -1,3 +1,5 @@
+use crate::framebuffer::Framebuffer;
+
 use cgmath::prelude::*;
 use cgmath::Vector3;
 
@@ -5,13 +7,14 @@ use cgmath::Vector3;
 pub struct Camera {
     position: Vector3<f32>,
     front: Vector3<f32>,
-    // right: Vector3<f32>,
     up: Vector3<f32>,
     yaw: cgmath::Rad<f32>,
     pitch: cgmath::Rad<f32>,
 
     fovy: cgmath::Deg<f32>,
     aspect: f32,
+    pub(crate) dimensions: (u32, u32),
+    pub(crate) framebuffer: Framebuffer,
 }
 
 const Z_NEAR: f32 = 0.1;
@@ -26,7 +29,7 @@ impl Camera {
         position: Vector3<f32>,
         target: Vector3<f32>,
         fovy: cgmath::Deg<f32>,
-        aspect: f32,
+        dimensions: (u32, u32),
     ) -> Self {
         let front = (position - target).normalize();
         let right = cgmath::vec3(0.0, 1.0, 0.0).cross(front).normalize();
@@ -36,24 +39,16 @@ impl Camera {
 
         let pitch = front.y.asin();
         let yaw = (front.x / pitch.cos()).acos();
-        // let yaw = front.x.acos() / pitch.cos();
-
-        // println!("position: {position:?}");
-        // println!("front: {front:?}");
-        // println!("right: {right:?}");
-        // println!("up: {up:?}");
-        // println!("yaw: {yaw:?}");
-        // println!("pitch: {pitch:?}");
-
         Self {
             position,
             front,
-            // right,
             up,
             yaw: cgmath::Rad(yaw),
             pitch: cgmath::Rad(pitch),
             fovy,
-            aspect,
+            dimensions,
+            aspect: dimensions.0 as f32 / dimensions.1 as f32,
+            framebuffer: Framebuffer::render_buffer(dimensions.0, dimensions.1).unwrap(),
         }
     }
 
@@ -70,8 +65,10 @@ impl Camera {
         cgmath::perspective(self.fovy, self.aspect, Z_NEAR, Z_FAR)
     }
 
-    pub fn set_aspect(&mut self, aspect: f32) {
-        self.aspect = aspect;
+    pub fn set_dimensions(&mut self, dimensions: (u32, u32)) {
+        self.aspect = dimensions.0 as f32 / dimensions.1 as f32;
+        self.dimensions = dimensions;
+        self.framebuffer = Framebuffer::render_buffer(dimensions.0, dimensions.1).unwrap();
     }
 
     pub fn update(
@@ -84,6 +81,7 @@ impl Camera {
         down: f32,
         mouse: (f32, f32),
     ) {
+        // TODO: Fix invalid movement when starting position is not (0, 0, 0)
         self.position += MOVEMENT_SPEED * (front - back) * self.front;
         self.position += MOVEMENT_SPEED * (right - left) * self.front.cross(self.up).normalize();
         self.position += MOVEMENT_SPEED * (up - down) * self.up;
@@ -107,9 +105,5 @@ impl Camera {
             self.yaw.sin() * self.pitch.cos(),
         )
         .normalize();
-        //
-        // println!("front: {:?}", self.front);
-        // println!("yaw: {:?}", self.yaw);
-        // println!("pitch: {:?}", self.pitch);
     }
 }

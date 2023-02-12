@@ -71,7 +71,6 @@ impl Primitive {
 
     pub(crate) fn render(&mut self) {
         self.vao.as_context(|| unsafe {
-            // println!("draw {} vertices", self.indices.len());
             gl::DrawElements(
                 gl::TRIANGLES,
                 self.indices.len().try_into().unwrap(),
@@ -168,7 +167,6 @@ impl Default for Primitive {
                 z: 0.5,
             },
         ];
-        // let normals = vec![Vector3::zero(), Vector3::zero(), Vector3::zero()];
         let tex_coords = vec![
             Vector2::zero(),
             Vector2::zero(),

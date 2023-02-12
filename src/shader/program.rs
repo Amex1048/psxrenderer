@@ -61,7 +61,6 @@ impl Program {
 
         #[cfg(debug_assertions)]
         unsafe {
-            // println!("resetting active Program");
             gl::UseProgram(0);
         }
 

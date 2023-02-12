@@ -25,7 +25,12 @@ pub struct World {
     assets: AssetStorage,
     nodes: Vec<Node>,
     camera: Camera,
+    screen: (i32, i32, i32, i32),
 }
+
+const BASE_RENDER_WIDTH: u32 = 320;
+const BASE_RENDER_HEIGHT: u32 = 240;
+const BASE_PIXEL_COUNT: u32 = BASE_RENDER_WIDTH * BASE_RENDER_HEIGHT;
 
 impl World {
     pub fn from_gltf_file<P: AsRef<std::path::Path>>(path: P) -> Self {
@@ -51,69 +56,90 @@ impl World {
 
         for material in storage.materials.iter_mut() {
             let shader = material.choose_shader(&storage.programs);
-            // println!("{shader}");
             material.shader = Some(shader);
         }
 
-        unsafe {
-            gl::Enable(gl::DEPTH_TEST);
-            // gl::Enable(gl::BLEND);
-            // gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
-        }
-
-        // println!("{:?}", storage);
-
         World {
-            // meshes: data.0,
-            // materials: data.1,
-            // programs: vec![shader],
             assets: storage,
             nodes,
             camera: Camera::new(
                 cgmath::vec3(0.0, 0.0, 5.0),
                 cgmath::vec3(0.0, 0.0, 0.0),
                 cgmath::Deg(45.0),
-                4.0 / 3.0,
+                (BASE_RENDER_WIDTH, BASE_RENDER_HEIGHT),
             ),
+            screen: (0, 0, 800, 600),
         }
     }
 
     pub fn render(&mut self) {
-        unsafe {
-            gl::ClearColor(0.6, 0.0, 0.8, 1.0);
-            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-        }
-
         let view = self.camera.view();
         let projection = self.camera.projection();
+        let dimensions = self.camera.dimensions;
+        let view_projection = projection * view;
 
-        for node in self.nodes.iter_mut() {
-            let mesh = &mut self.assets.meshes[node.mesh];
-
-            for (i, primitive) in mesh.0.iter_mut().enumerate() {
-                let material = &mut self.assets.materials[node.materials[i]];
-                let program = &mut self.assets.programs[material.shader.unwrap_or(0)];
-
-                let mvp = projection * view * node.transform;
-
-                program.load_uniform_mat("mvp", false, mvp);
-
-                if let Some(albedo_index) = material.albedo {
-                    let texture = &self.assets.textures2d[albedo_index];
-                    program.load_uniform_texture2d(texture, crate::shader::fragment::ALBEDO_TEX);
-                    program.load_uniform_vec(
-                        "albedo",
-                        cgmath::vec1(crate::shader::fragment::ALBEDO_TEX as i32),
-                    );
-                } else {
-                    program.load_uniform_vec("color", material.base_color.unwrap());
+        self.camera
+            .framebuffer
+            .as_context(|| {
+                unsafe {
+                    // gl::Disable(gl::DITHER);
+                    gl::Viewport(0, 0, dimensions.0 as i32, dimensions.1 as i32);
+                    gl::ClearColor(0.6, 0.0, 0.8, 1.0);
+                    gl::Enable(gl::DEPTH_TEST);
+                    gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
                 }
 
-                program.as_context(|| {
-                    primitive.render();
-                });
-            }
-        }
+                for node in self.nodes.iter_mut() {
+                    let mesh = &mut self.assets.meshes[node.mesh];
+
+                    for (i, primitive) in mesh.0.iter_mut().enumerate() {
+                        let material = &mut self.assets.materials[node.materials[i]];
+                        let program = &mut self.assets.programs[material.shader.unwrap_or(0)];
+
+                        let mvp = view_projection * node.transform;
+
+                        program.load_uniform_mat("mvp", false, mvp);
+                        program.load_uniform_vec(
+                            "renderResolution",
+                            cgmath::vec2(dimensions.0 as f32, dimensions.1 as f32),
+                        );
+
+                        if let Some(albedo_index) = material.albedo {
+                            let texture = &self.assets.textures2d[albedo_index];
+                            program.load_uniform_texture2d(
+                                texture,
+                                crate::shader::fragment::ALBEDO_TEX,
+                            );
+                            program.load_uniform_vec(
+                                "albedo",
+                                cgmath::vec1(crate::shader::fragment::ALBEDO_TEX as i32),
+                            );
+                        } else {
+                            program.load_uniform_vec("color", material.base_color.unwrap());
+                        }
+
+                        program.as_context(|| {
+                            primitive.render();
+                        });
+                    }
+                }
+                unsafe {
+                    gl::BindFramebuffer(gl::DRAW_FRAMEBUFFER, 0);
+                    gl::BlitFramebuffer(
+                        0,
+                        0,
+                        dimensions.0 as i32,
+                        dimensions.1 as i32,
+                        self.screen.0,
+                        self.screen.1,
+                        self.screen.2,
+                        self.screen.3,
+                        gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT,
+                        gl::NEAREST,
+                    );
+                }
+            })
+            .unwrap();
 
         unsafe {
             let error = gl::GetError();
@@ -122,10 +148,19 @@ impl World {
     }
 
     pub fn update_viewport(&mut self, x: i32, y: i32, width: i32, height: i32) {
-        unsafe {
-            gl::Viewport(x, y, width, height);
-        }
-        self.camera.set_aspect(width as f32 / height as f32);
+        self.screen.0 = x;
+        self.screen.1 = y;
+        self.screen.2 = width;
+        self.screen.3 = height;
+
+        let area_width = (width - x).abs();
+        let area_height = (height - y).abs();
+        let aspect = area_width as f32 / area_height as f32;
+        let height = (BASE_PIXEL_COUNT as f32 / aspect).sqrt();
+        let width = BASE_PIXEL_COUNT as f32 / height;
+
+        self.camera
+            .set_dimensions((width.round() as u32, height.round() as u32));
     }
 
     pub fn update(&mut self, input: &crate::InputState, delta: f32) {
@@ -140,13 +175,9 @@ impl World {
         let down = if input.q { 1.0 } else { 0.0 } * delta;
 
         let mouse = (
-            input.mouse_rel.0 as f32 / 800.0 * delta,
-            input.mouse_rel.1 as f32 / 600.0 * delta,
+            input.mouse_rel.0 as f32 / self.screen.2 as f32 * delta,
+            input.mouse_rel.1 as f32 / self.screen.3 as f32 * delta,
         );
-
-        // println!("{:?}", input.mouse_pos);
-        // println!("{:?}", input.mouse_rel);
-        // println!("{:?}", mouse);
 
         self.camera
             .update(front, right, back, left, up, down, mouse);

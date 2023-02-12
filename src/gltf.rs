@@ -12,6 +12,7 @@ use crate::texture::Texture2D;
 use crate::render::AssetStorage;
 use crate::render::Node;
 
+// TODO: load camera position from file
 pub fn read_from_file<P: AsRef<Path>>(path: P) -> (AssetStorage, Vec<Node>) {
     let (document, buffers, images) = gltf::import(path).unwrap();
     assert_eq!(buffers.len(), document.buffers().count());
@@ -23,10 +24,6 @@ pub fn read_from_file<P: AsRef<Path>>(path: P) -> (AssetStorage, Vec<Node>) {
         textures2d: Vec::with_capacity(images.len()),
         programs: Vec::new(),
     };
-
-    // let mut meshes: Vec<Mesh> = Vec::with_capacity(document.meshes().len());
-    // let mut materials: Vec<Material> = Vec::with_capacity(document.materials().len());
-    // let mut nodes: Vec<Node> = Vec::with_capacity(document.nodes().len());
 
     let mut material_indexes: Vec<Vec<usize>> = Vec::with_capacity(document.meshes().len());
     for gltf_mesh in document.meshes() {
@@ -48,13 +45,6 @@ pub fn read_from_file<P: AsRef<Path>>(path: P) -> (AssetStorage, Vec<Node>) {
                 indices.data_type() == gltf::accessor::DataType::U16
                     || indices.data_type() == gltf::accessor::DataType::U32
             );
-
-            // println!(
-            //     "size: {:?}, offset: {:?}, dimensions: {:?}",
-            //     positions.size(),
-            //     positions.offset(),
-            //     positions.dimensions()
-            // );
 
             let positions = get_data::<cgmath::Vector3<f32>>(positions, &buffers);
             let normals = get_data::<cgmath::Vector3<f32>>(normals, &buffers);
@@ -114,11 +104,6 @@ pub fn read_from_file<P: AsRef<Path>>(path: P) -> (AssetStorage, Vec<Node>) {
     }
 
     return (storage, node_data.into_values().collect());
-    // return (
-    //     meshes,
-    //     materials,
-    //     node_data.into_iter().map(|(_, value)| value).collect(),
-    // );
 
     fn parse_nodes_recursive(
         gltf_node: gltf::Node,
@@ -126,8 +111,6 @@ pub fn read_from_file<P: AsRef<Path>>(path: P) -> (AssetStorage, Vec<Node>) {
         data: &mut HashMap<usize, Node>,
         material_indexes: &[Vec<usize>],
     ) {
-        // let transform: cgmath::Matrix4<f32> =
-        //     cgmath::Matrix4::from(gltf_node.transform().matrix()) * parent_transform;
         let transform: cgmath::Matrix4<f32> =
             parent_transform * cgmath::Matrix4::from(gltf_node.transform().matrix());
 
@@ -148,8 +131,6 @@ pub fn read_from_file<P: AsRef<Path>>(path: P) -> (AssetStorage, Vec<Node>) {
 }
 
 fn get_data<T: bytemuck::Pod>(accessor: Accessor, buffers: &[Data]) -> Vec<T> {
-    // let component_size = accessor.size();
-    // let offset = accessor.offset();
     let view = accessor.view().unwrap();
 
     let buffer = &buffers[view.buffer().index()][view.offset()..view.offset() + view.length()];
@@ -179,15 +160,18 @@ fn get_texture<'a>(texture: gltf::Texture<'a>, images: &[gltf::image::Data]) -> 
     Texture2D::new(
         sampler.wrap_s().as_gl_enum(),
         sampler.wrap_t().as_gl_enum(),
-        sampler
-            .mag_filter()
-            .unwrap_or(gltf::texture::MagFilter::Linear)
-            .as_gl_enum(),
-        sampler
-            .min_filter()
-            .unwrap_or(gltf::texture::MinFilter::LinearMipmapLinear)
-            .as_gl_enum(),
-        &image.pixels,
+        // Overwrite in favour of NEAR for better PSX emulation
+        // sampler
+        //     .mag_filter()
+        //     .unwrap_or(gltf::texture::MagFilter::Linear)
+        //     .as_gl_enum(),
+        // sampler
+        //     .min_filter()
+        //     .unwrap_or(gltf::texture::MinFilter::LinearMipmapLinear)
+        //     .as_gl_enum(),
+        gl::NEAREST,
+        gl::NEAREST,
+        Some(&image.pixels),
         format,
         gl_type,
         (image.width, image.height),

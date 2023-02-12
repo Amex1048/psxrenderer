@@ -92,7 +92,6 @@ impl Vbo {
         normalized: bool,
     ) {
         unsafe {
-            // gl::BindBuffer(Self::BUFFER_TYPE.into(), self.glid());
             self.bind();
             gl::VertexAttribPointer(
                 location,

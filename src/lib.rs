@@ -1,5 +1,6 @@
 mod buffer;
 pub mod camera;
+mod framebuffer;
 pub mod gltf;
 mod material;
 mod mesh;

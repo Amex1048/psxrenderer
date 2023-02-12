@@ -9,7 +9,7 @@ impl Texture2D {
         wrapt: GLenum,
         mag_filter: GLenum,
         min_filter: GLenum,
-        data: &[u8],
+        data: Option<&[u8]>,
         format: GLenum,
         gl_type: GLenum,
         dimensions: (u32, u32),
@@ -31,29 +31,29 @@ impl Texture2D {
 
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, min_filter as i32);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, mag_filter as i32);
+            // gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32);
+            // gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32);
 
             gl::TexImage2D(
                 gl::TEXTURE_2D,
                 0,
-                // gl::RGB as i32,
                 format as i32,
                 dimensions.0 as i32,
                 dimensions.1 as i32,
                 0,
-                // gl::RGB,
                 format,
-                // gl::UNSIGNED_BYTE,
                 gl_type,
-                data.as_ptr() as *const _,
+                data.map(|x| x.as_ptr()).unwrap_or(std::ptr::null()) as *const _,
             );
 
-            gl::GenerateMipmap(gl::TEXTURE_2D);
+            if min_filter != gl::NEAREST || mag_filter != gl::NEAREST {
+                gl::GenerateMipmap(gl::TEXTURE_2D);
+            }
 
-            // #[cfg(debug_assertions)]
             gl::BindTexture(gl::TEXTURE_2D, 0);
         }
 
-        Texture2D(texture_id)
+        Self(texture_id)
     }
 }
 

@@ -1,7 +1,3 @@
-// use crate::shader::{Program, Shader};
-
-// use cgmath::prelude::*;
-
 use crate::shader::Program;
 
 #[derive(Debug)]
@@ -12,6 +8,7 @@ pub struct Material {
 }
 
 impl Material {
+    // TODO: fix this crap
     pub fn choose_shader(&self, _programs: &[Program]) -> usize {
         if self.albedo.is_some() {
             1

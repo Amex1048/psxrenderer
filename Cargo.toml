@@ -2,8 +2,7 @@
 name = "renderer"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+publish = false
 
 [dependencies]
 # OpenGl
@@ -18,24 +17,13 @@ sdl2 = "0.35.2"
 # GLTF file format parser
 gltf = "1.0.0"
 
-# Entity-component-system provider
-# bevy_ecs = "0.9.0"
-
-# Egui
-# egui = "0.19.0"
-# egui_sdl2_gl = "0.16.0"
-
 # utils for bytes casting
 bytemuck = "1.12.3"
-
-# image formats parser
-# image = "0.24.5"
-
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]
 opt-level = 1
 
-# Enable high optimizations for dependencies (incl. Bevy), but not for our code:
+# Enable high optimizations for dependencies
 [profile.dev.package."*"]
 opt-level = 3
